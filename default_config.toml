@@ -1,0 +1,13 @@
+code_folder = "/Users/home/mb/_deckard_code/"
+
+[project.flutter]
+icon = "🐦"
+repo = "https://github.com/flutter/flutter"
+
+[project.rust]
+icon = "🧲"
+repo = "https://github.com/rust-lang/rust"
+
+[project.k8s]
+icon = "🚀"
+repo = "https://github.com/kubernetes/kubernetes"
