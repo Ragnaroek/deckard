@@ -8,7 +8,7 @@ import (
 
 type Config struct {
 	CodeFolder string                   `toml:"code_folder"`
-	Project    map[string]ConfigProject `toml:"project"`
+	Projects   map[string]ConfigProject `toml:"project"`
 }
 
 type ConfigProject struct {
