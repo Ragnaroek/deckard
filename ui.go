@@ -12,6 +12,7 @@ import (
 type DeckardUI struct {
 	app      *tview.Application
 	projects *tview.TextView
+	status   *tview.TextView
 
 	config *Config
 
@@ -20,6 +21,7 @@ type DeckardUI struct {
 
 type uiState struct {
 	selectedProject int
+	status          string
 }
 
 func newDeckardUi(app *tview.Application, state *uiState, config *Config) *DeckardUI {
@@ -35,14 +37,32 @@ func (ui *DeckardUI) SelectProject(id int) {
 	updateProjectText(ui.projects, ui.state, ui.config)
 }
 
+// TODO Render spinner (optional parameter)
+func (ui *DeckardUI) UpdateStatus(text string) {
+	ui.state.status = text
+	updateStatusText(ui.status, ui.state)
+}
+
+func (ui *DeckardUI) ClearStatus() {
+	ui.state.status = ""
+	updateStatusText(ui.status, ui.state)
+}
+
 func BuildUI(config *Config) (*DeckardUI, error) {
 
 	initialState := &uiState{}
 
+	header := tview.NewFlex().SetDirection(tview.FlexColumn)
+	header.SetTitle("Deckard").SetTitleAlign(tview.AlignLeft).SetBorder(true)
+
 	projects := buildProjects(initialState, config)
+	status := buildStatus(initialState)
 
 	flex := tview.NewFlex().SetDirection(tview.FlexRow).
-		AddItem(projects, 3, 100, false).
+		AddItem(header.
+			AddItem(projects, 0, 50, false).
+			AddItem(status, 0, 50, false),
+			3, 100, false).
 		AddItem(tview.NewFlex().SetDirection(tview.FlexColumn).
 			AddItem(tview.NewBox().SetBorder(true).SetTitle("Commits"), 0, 66, false).
 			AddItem(tview.NewBox().SetBorder(true).SetTitle("Statistics"), 0, 33, false),
@@ -51,6 +71,7 @@ func BuildUI(config *Config) (*DeckardUI, error) {
 	app := tview.NewApplication().SetRoot(flex, true)
 	ui := newDeckardUi(app, initialState, config)
 	ui.projects = projects
+	ui.status = status
 
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		return handleInput(ui, config, event)
@@ -76,9 +97,10 @@ func handleInput(ui *DeckardUI, config *Config, event *tcell.EventKey) *tcell.Ev
 	return event
 }
 
+// ## project view
+
 func buildProjects(state *uiState, config *Config) *tview.TextView {
 	text := tview.NewTextView()
-	text.SetBorder(true).SetTitle("Deckard").SetTitleAlign(tview.AlignLeft)
 	text.SetRegions(true)
 	updateProjectText(text, state, config)
 	return text
@@ -120,4 +142,18 @@ func updateProjectText(text *tview.TextView, state *uiState, config *Config) {
 
 	text.SetText(prjText)
 	text.Highlight(SelectionMarker)
+}
+
+// ## status view
+
+func buildStatus(state *uiState) *tview.TextView {
+	text := tview.NewTextView()
+	text.SetDynamicColors(true)
+	text.SetRegions(true)
+	updateStatusText(text, state)
+	return text
+}
+
+func updateStatusText(text *tview.TextView, state *uiState) {
+	text.SetText(fmt.Sprintf("[yellow]%s[-]", state.status))
 }

@@ -14,6 +14,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	deckard.StartInit(ui)
+
 	err = ui.Run()
 	if err != nil {
 		panic(err)
