@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
+	"time"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -13,6 +14,7 @@ type DeckardUI struct {
 	app      *tview.Application
 	projects *tview.TextView
 	status   *tview.TextView
+	commits  *tview.Table
 
 	config *Config
 
@@ -22,6 +24,15 @@ type DeckardUI struct {
 type uiState struct {
 	selectedProject int
 	status          string
+	commits         []*Commit
+}
+
+type Commit struct {
+	Project    string
+	Hash       string
+	Message    string
+	Author     string
+	AuthorWhen time.Time
 }
 
 func newDeckardUi(app *tview.Application, state *uiState, config *Config) *DeckardUI {
@@ -48,6 +59,11 @@ func (ui *DeckardUI) ClearStatus() {
 	updateStatusText(ui.status, ui.state)
 }
 
+func (ui *DeckardUI) UpdateCommits(commits []*Commit) {
+	ui.state.commits = commits
+	updateCommitTable(ui)
+}
+
 func BuildUI(config *Config) (*DeckardUI, error) {
 
 	initialState := &uiState{}
@@ -57,6 +73,7 @@ func BuildUI(config *Config) (*DeckardUI, error) {
 
 	projects := buildProjects(initialState, config)
 	status := buildStatus(initialState)
+	commits := buildCommits(initialState)
 
 	flex := tview.NewFlex().SetDirection(tview.FlexRow).
 		AddItem(header.
@@ -64,14 +81,18 @@ func BuildUI(config *Config) (*DeckardUI, error) {
 			AddItem(status, 0, 50, false),
 			3, 100, false).
 		AddItem(tview.NewFlex().SetDirection(tview.FlexColumn).
-			AddItem(tview.NewBox().SetBorder(true).SetTitle("Commits"), 0, 66, false).
-			AddItem(tview.NewBox().SetBorder(true).SetTitle("Statistics"), 0, 33, false),
+			AddItem(commits, 0, 80, true).
+			AddItem(tview.NewFlex().SetDirection(tview.FlexRow).
+				AddItem(tview.NewBox().SetBorder(true).SetTitle("Commit Details"), 0, 66, false).
+				AddItem(tview.NewBox().SetBorder(true).SetTitle("Project Statistics"), 0, 34, false),
+				0, 20, false),
 			0, 100, false)
 
-	app := tview.NewApplication().SetRoot(flex, true)
+	app := tview.NewApplication().SetRoot(flex, true).SetFocus(commits)
 	ui := newDeckardUi(app, initialState, config)
 	ui.projects = projects
 	ui.status = status
+	ui.commits = commits
 
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		return handleInput(ui, config, event)
@@ -156,4 +177,33 @@ func buildStatus(state *uiState) *tview.TextView {
 
 func updateStatusText(text *tview.TextView, state *uiState) {
 	text.SetText(fmt.Sprintf("[yellow]%s[-]", state.status))
+}
+
+// ## commit table
+
+func buildCommits(state *uiState) *tview.Table {
+	table := tview.NewTable()
+	table.SetBorder(true)
+	table.SetSelectable(true, false)
+	return table
+}
+
+func updateCommitTable(ui *DeckardUI) {
+	table := ui.commits
+	for i, commit := range ui.state.commits {
+		table.SetCellSimple(i, 0, lookupProjectIcon(ui, commit.Project))
+		table.SetCellSimple(i, 1, commit.AuthorWhen.Format("02.01 15:04"))
+		table.SetCellSimple(i, 2, commit.Hash[0:6])
+		table.SetCellSimple(i, 3, commit.Author)
+		table.SetCellSimple(i, 4, commit.Message)
+	}
+}
+
+func lookupProjectIcon(ui *DeckardUI, project string) string {
+	for prj, conf := range ui.config.Projects {
+		if prj == project {
+			return conf.Icon
+		}
+	}
+	return ""
 }

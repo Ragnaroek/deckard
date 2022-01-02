@@ -14,7 +14,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	deckard.StartInit(ui)
+	deckard.RepoUpdate(ui)
 
 	err = ui.Run()
 	if err != nil {
