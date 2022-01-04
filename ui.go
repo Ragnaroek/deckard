@@ -84,7 +84,7 @@ func BuildUI(config *Config) (*DeckardUI, error) {
 			AddItem(commits, 0, 80, true).
 			AddItem(tview.NewFlex().SetDirection(tview.FlexRow).
 				AddItem(tview.NewBox().SetBorder(true).SetTitle("Commit Details"), 0, 66, false).
-				AddItem(tview.NewBox().SetBorder(true).SetTitle("Project Statistics"), 0, 34, false),
+				AddItem(tview.NewBox().SetBorder(true).SetTitle("Project Metric"), 0, 34, false),
 				0, 20, false),
 			0, 100, false)
 

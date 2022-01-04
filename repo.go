@@ -12,7 +12,7 @@ import (
 )
 
 /// RepoUpdate refreshes all repo based resources after the UI has been started.
-func RepoUpdate(ui *DeckardUI) {
+func UpdateFromRepo(ui *DeckardUI) {
 	go backgroundUpdate(ui)
 }
 
