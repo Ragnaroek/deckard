@@ -25,12 +25,24 @@ func updateCommits(ui *DeckardUI, repos map[string]*git.Repository) {
 	updateStatus(ui, "Updating commit list...")
 
 	commits := make([]*Commit, 0)
-	since := time.Now().Add(14 * -24 * time.Hour)
+
 	for prj, repo := range repos {
-		iter, err := repo.Log(&git.LogOptions{All: true, Since: &since})
+
+		since, err := GetFetchState(ui.db, prj)
 		if err != nil {
 			panic(err) //TODO show error in UI
 		}
+		if since == nil {
+			fallback := time.Now().Add(14 * -24 * time.Hour)
+			since = &fallback
+		}
+
+		iter, err := repo.Log(&git.LogOptions{All: true, Since: since})
+		if err != nil {
+			panic(err) //TODO show error in UI
+		}
+
+		var lastCommitTime = since
 		iter.ForEach(func(commit *object.Commit) error {
 			commits = append(commits, &Commit{
 				Project:    prj,
@@ -39,8 +51,15 @@ func updateCommits(ui *DeckardUI, repos map[string]*git.Repository) {
 				Author:     commit.Author.Name,
 				AuthorWhen: commit.Author.When,
 			})
+			if commit.Author.When.After(*lastCommitTime) {
+				lastCommitTime = &commit.Author.When
+			}
 			return nil
 		})
+		err = UpdateFetchState(ui.db, prj, lastCommitTime)
+		if err != nil {
+			panic(err) //TODO show error in UI
+		}
 	}
 
 	sort.Slice(commits, func(i, j int) bool {

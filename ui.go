@@ -1,6 +1,7 @@
 package deckard
 
 import (
+	"database/sql"
 	"fmt"
 	"sort"
 	"strconv"
@@ -17,6 +18,7 @@ type DeckardUI struct {
 	commits  *tview.Table
 
 	config *Config
+	db     *sql.DB
 
 	state *uiState
 }
@@ -35,8 +37,8 @@ type Commit struct {
 	AuthorWhen time.Time
 }
 
-func newDeckardUi(app *tview.Application, state *uiState, config *Config) *DeckardUI {
-	return &DeckardUI{app: app, state: state, config: config}
+func newDeckardUi(app *tview.Application, state *uiState, config *Config, db *sql.DB) *DeckardUI {
+	return &DeckardUI{app: app, state: state, config: config, db: db}
 }
 
 func (ui *DeckardUI) Run() error {
@@ -64,7 +66,7 @@ func (ui *DeckardUI) UpdateCommits(commits []*Commit) {
 	updateCommitTable(ui)
 }
 
-func BuildUI(config *Config) (*DeckardUI, error) {
+func BuildUI(config *Config, db *sql.DB) (*DeckardUI, error) {
 
 	initialState := &uiState{}
 
@@ -89,7 +91,7 @@ func BuildUI(config *Config) (*DeckardUI, error) {
 			0, 100, false)
 
 	app := tview.NewApplication().SetRoot(flex, true).SetFocus(commits)
-	ui := newDeckardUi(app, initialState, config)
+	ui := newDeckardUi(app, initialState, config, db)
 	ui.projects = projects
 	ui.status = status
 	ui.commits = commits

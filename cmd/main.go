@@ -10,7 +10,12 @@ func main() {
 		panic(err)
 	}
 
-	ui, err := deckard.BuildUI(config)
+	db, err := deckard.InitDB(config)
+	if err != nil {
+		panic(err)
+	}
+
+	ui, err := deckard.BuildUI(config, db)
 	if err != nil {
 		panic(err)
 	}
