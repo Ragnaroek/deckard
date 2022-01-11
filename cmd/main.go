@@ -21,7 +21,7 @@ func main() {
 	}
 
 	// update UI from DB first (much faster than a repo update)
-	err = deckard.UpdateFromDB(ui)
+	err = deckard.UpdateFromDB(db, ui)
 	if err != nil {
 		panic(err)
 	}

@@ -35,6 +35,8 @@ type Commit struct {
 	Message    string
 	Author     string
 	AuthorWhen time.Time
+	State      string
+	Comment    *string
 }
 
 func newDeckardUi(app *tview.Application, state *uiState, config *Config, db *sql.DB) *DeckardUI {
@@ -61,8 +63,9 @@ func (ui *DeckardUI) ClearStatus() {
 	updateStatusText(ui.status, ui.state)
 }
 
-func (ui *DeckardUI) UpdateCommits(commits []*Commit) {
-	ui.state.commits = commits
+func (ui *DeckardUI) AddCommits(commits []*Commit) {
+	ui.state.commits = append(ui.state.commits, commits...)
+	// TODO sort commits here once instead of in the repo code!
 	updateCommitTable(ui)
 }
 

@@ -69,7 +69,7 @@ func UpdateFetchState(db *sql.DB, project string, t *time.Time) error {
 func StoreCommits(db *sql.DB, commits []*Commit) error {
 	for _, commit := range commits {
 		_, err := db.Exec("INSERT OR IGNORE INTO commits (project, hash, message, author, author_when, state, comment) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
-			commit.Project, commit.Hash, commit.Message, commit.Author, commit.AuthorWhen.UnixMilli(), STATE_NEW, nil)
+			commit.Project, commit.Hash, commit.Message, commit.Author, commit.AuthorWhen.UnixMilli(), commit.State, commit.Comment)
 		if err != nil {
 			return err
 		}
@@ -77,9 +77,38 @@ func StoreCommits(db *sql.DB, commits []*Commit) error {
 	return nil
 }
 
-func UpdateFromDB(ui *DeckardUI) error {
+func UpdateFromDB(db *sql.DB, ui *DeckardUI) error {
 
-	// TODO read fetch states from db and fetch from there, record them in DB
+	rows, err := db.Query("SELECT project, hash, message, author, author_when, state, comment FROM commits")
+	if err != nil {
+		return err
+	}
+
+	commits := make([]*Commit, 0)
+	var project string
+	var hash string
+	var message string
+	var author string
+	var author_when int64
+	var state string
+	var comment *string
+	for rows.Next() {
+		err = rows.Scan(&project, &hash, &message, &author, &author_when, &state, &comment)
+		if err != nil {
+			return err
+		}
+		commits = append(commits, &Commit{
+			Project:    project,
+			Hash:       hash,
+			Message:    message,
+			Author:     author,
+			AuthorWhen: time.UnixMilli(author_when),
+			State:      state,
+			Comment:    comment,
+		})
+	}
+
+	ui.AddCommits(commits)
 
 	return nil
 }

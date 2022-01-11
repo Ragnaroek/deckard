@@ -51,6 +51,7 @@ func updateCommits(ui *DeckardUI, repos map[string]*git.Repository) {
 				Message:    commit.Message,
 				Author:     commit.Author.Name,
 				AuthorWhen: commit.Author.When,
+				State:      STATE_NEW,
 			})
 			if commit.Author.When.After(*lastCommitTime) {
 				lastCommitTime = &commit.Author.When
@@ -76,7 +77,7 @@ func updateCommits(ui *DeckardUI, repos map[string]*git.Repository) {
 	})
 
 	ui.app.QueueUpdateDraw(func() {
-		ui.UpdateCommits(commits)
+		ui.AddCommits(commits)
 	})
 
 	clearStatus(ui)
