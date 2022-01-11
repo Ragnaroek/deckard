@@ -43,8 +43,9 @@ func updateCommits(ui *DeckardUI, repos map[string]*git.Repository) {
 		}
 
 		var lastCommitTime = since
+		repoCommits := make([]*Commit, 0)
 		iter.ForEach(func(commit *object.Commit) error {
-			commits = append(commits, &Commit{
+			repoCommits = append(repoCommits, &Commit{
 				Project:    prj,
 				Hash:       commit.Hash.String(),
 				Message:    commit.Message,
@@ -56,6 +57,14 @@ func updateCommits(ui *DeckardUI, repos map[string]*git.Repository) {
 			}
 			return nil
 		})
+
+		err = StoreCommits(ui.db, repoCommits)
+		if err != nil {
+			panic(err) //TODO show error in UI
+		}
+
+		commits = append(commits, repoCommits...)
+
 		err = UpdateFetchState(ui.db, prj, lastCommitTime)
 		if err != nil {
 			panic(err) //TODO show error in UI
