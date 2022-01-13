@@ -50,6 +50,7 @@ func (ui *DeckardUI) Run() error {
 func (ui *DeckardUI) SelectProject(id int) {
 	ui.state.selectedProject = id
 	updateProjectText(ui.projects, ui.state, ui.config)
+	updateCommitTable(ui)
 }
 
 // TODO Render spinner (optional parameter)
@@ -64,8 +65,13 @@ func (ui *DeckardUI) ClearStatus() {
 }
 
 func (ui *DeckardUI) AddCommits(commits []*Commit) {
+	// TODO only add if not already in list!
 	ui.state.commits = append(ui.state.commits, commits...)
-	// TODO sort commits here once instead of in the repo code!
+
+	sort.Slice(ui.state.commits, func(i, j int) bool {
+		return ui.state.commits[i].AuthorWhen.Before(ui.state.commits[j].AuthorWhen)
+	})
+
 	updateCommitTable(ui)
 }
 
@@ -141,21 +147,9 @@ const SelectionMarker = "sel"
 
 func updateProjectText(text *tview.TextView, state *uiState, config *Config) {
 
-	projects := make([]project, 0)
-	projects = append(projects, project{
-		name: "all",
-		icon: "",
-	})
-	for id, data := range config.Projects {
-		projects = append(projects, project{name: id, icon: data.Icon})
-	}
-	sort.Slice(projects, func(i, j int) bool {
-		return projects[i].name < projects[j].name
-	})
-
 	prjText := ""
 	num := 0
-	for _, prj := range projects {
+	for _, prj := range getProjects(config) {
 
 		sel := ""
 		if state.selectedProject == num {
@@ -168,6 +162,21 @@ func updateProjectText(text *tview.TextView, state *uiState, config *Config) {
 
 	text.SetText(prjText)
 	text.Highlight(SelectionMarker)
+}
+
+func getProjects(config *Config) []project {
+	projects := make([]project, 0)
+	projects = append(projects, project{
+		name: "all",
+		icon: "",
+	})
+	for id, data := range config.Projects {
+		projects = append(projects, project{name: id, icon: data.Icon})
+	}
+	sort.Slice(projects, func(i, j int) bool {
+		return projects[i].name < projects[j].name
+	})
+	return projects
 }
 
 // ## status view
@@ -195,12 +204,24 @@ func buildCommits(state *uiState) *tview.Table {
 
 func updateCommitTable(ui *DeckardUI) {
 	table := ui.commits
-	for i, commit := range ui.state.commits {
-		table.SetCellSimple(i, 0, lookupProjectIcon(ui, commit.Project))
-		table.SetCellSimple(i, 1, commit.AuthorWhen.Format("02.01 15:04"))
-		table.SetCellSimple(i, 2, commit.Hash[0:6])
-		table.SetCellSimple(i, 3, commit.Author)
-		table.SetCellSimple(i, 4, commit.Message)
+
+	selectedPrjName := ""
+	if ui.state.selectedProject != 0 {
+		projects := getProjects(ui.config)
+		selectedPrjName = projects[ui.state.selectedProject].name
+	}
+
+	table.Clear()
+	tablePos := 0
+	for _, commit := range ui.state.commits {
+		if selectedPrjName == "" || selectedPrjName == commit.Project {
+			table.SetCellSimple(tablePos, 0, lookupProjectIcon(ui, commit.Project))
+			table.SetCellSimple(tablePos, 1, commit.AuthorWhen.Format("02.01 15:04"))
+			table.SetCellSimple(tablePos, 2, commit.Hash[0:6])
+			table.SetCellSimple(tablePos, 3, commit.Author)
+			table.SetCellSimple(tablePos, 4, commit.Message)
+			tablePos++
+		}
 	}
 }
 

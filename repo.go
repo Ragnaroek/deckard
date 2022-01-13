@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"sort"
 	"time"
 
 	git "github.com/go-git/go-git/v5"
@@ -71,10 +70,6 @@ func updateCommits(ui *DeckardUI, repos map[string]*git.Repository) {
 			panic(err) //TODO show error in UI
 		}
 	}
-
-	sort.Slice(commits, func(i, j int) bool {
-		return commits[i].AuthorWhen.Before(commits[j].AuthorWhen)
-	})
 
 	ui.app.QueueUpdateDraw(func() {
 		ui.AddCommits(commits)
