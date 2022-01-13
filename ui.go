@@ -65,8 +65,16 @@ func (ui *DeckardUI) ClearStatus() {
 }
 
 func (ui *DeckardUI) AddCommits(commits []*Commit) {
-	// TODO only add if not already in list!
-	ui.state.commits = append(ui.state.commits, commits...)
+	//TODO make ui.state.commits a hashtable to prevent this O(n^2) check
+ADD_COMMIT:
+	for _, newCommit := range commits {
+		for _, commit := range ui.state.commits {
+			if commit.Hash == newCommit.Hash {
+				continue ADD_COMMIT
+			}
+		}
+		ui.state.commits = append(ui.state.commits, newCommit)
+	}
 
 	sort.Slice(ui.state.commits, func(i, j int) bool {
 		return ui.state.commits[i].AuthorWhen.Before(ui.state.commits[j].AuthorWhen)
@@ -92,11 +100,11 @@ func BuildUI(config *Config, db *sql.DB) (*DeckardUI, error) {
 			AddItem(status, 0, 50, false),
 			3, 100, false).
 		AddItem(tview.NewFlex().SetDirection(tview.FlexColumn).
-			AddItem(commits, 0, 80, true).
+			AddItem(commits, 0, 70, true).
 			AddItem(tview.NewFlex().SetDirection(tview.FlexRow).
 				AddItem(tview.NewBox().SetBorder(true).SetTitle("Commit Details"), 0, 66, false).
 				AddItem(tview.NewBox().SetBorder(true).SetTitle("Project Metric"), 0, 34, false),
-				0, 20, false),
+				0, 30, false),
 			0, 100, false)
 
 	app := tview.NewApplication().SetRoot(flex, true).SetFocus(commits)
