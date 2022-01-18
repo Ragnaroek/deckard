@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gdamore/tcell/v2"
@@ -37,6 +38,14 @@ type Commit struct {
 	AuthorWhen time.Time
 	State      string
 	Comment    *string
+}
+
+func (c *Commit) Headline() string {
+	lines := strings.Split(c.Message, "\n")
+	if len(lines) > 0 {
+		return lines[0]
+	}
+	return ""
 }
 
 func newDeckardUi(app *tview.Application, state *uiState, config *Config, db *sql.DB) *DeckardUI {
@@ -227,7 +236,7 @@ func updateCommitTable(ui *DeckardUI) {
 			table.SetCellSimple(tablePos, 1, commit.AuthorWhen.Format("02.01 15:04"))
 			table.SetCellSimple(tablePos, 2, commit.Hash[0:6])
 			table.SetCellSimple(tablePos, 3, commit.Author)
-			table.SetCellSimple(tablePos, 4, commit.Message)
+			table.SetCellSimple(tablePos, 4, commit.Headline())
 			tablePos++
 		}
 	}
