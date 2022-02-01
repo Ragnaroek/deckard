@@ -27,7 +27,7 @@ func InitDB(config *Config) (*sql.DB, error) {
 		return nil, err
 	}
 
-	_, err = db.Exec("CREATE TABLE IF NOT EXISTS commits (project TEXT NOT NULL, hash TEXT NOT NULL, message TEXT NOT NULL, author TEXT NOT NULL, author_when INTEGER, state TEXT NOT NULL, comment TEXT)")
+	_, err = db.Exec("CREATE TABLE IF NOT EXISTS commits (project TEXT NOT NULL, hash TEXT NOT NULL, message TEXT NOT NULL, author TEXT NOT NULL, author_when INTEGER, slat_score INTEGER, state TEXT NOT NULL, comment TEXT)")
 	if err != nil {
 		return nil, err
 	}
@@ -68,8 +68,8 @@ func UpdateFetchState(db *sql.DB, project string, t *time.Time) error {
 
 func StoreCommits(db *sql.DB, commits []*Commit) error {
 	for _, commit := range commits {
-		_, err := db.Exec("INSERT OR IGNORE INTO commits (project, hash, message, author, author_when, state, comment) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
-			commit.Project, commit.Hash, commit.Message, commit.Author, commit.AuthorWhen.UnixMilli(), commit.State, commit.Comment)
+		_, err := db.Exec("INSERT OR IGNORE INTO commits (project, hash, message, author, author_when, slat_score, state, comment) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+			commit.Project, commit.Hash, commit.Message, commit.Author, commit.AuthorWhen.UnixMilli(), commit.SlatScore, commit.State, commit.Comment)
 		if err != nil {
 			return err
 		}
@@ -79,7 +79,7 @@ func StoreCommits(db *sql.DB, commits []*Commit) error {
 
 func UpdateFromDB(db *sql.DB, ui *DeckardUI) error {
 
-	rows, err := db.Query("SELECT project, hash, message, author, author_when, state, comment FROM commits")
+	rows, err := db.Query("SELECT project, hash, message, author, author_when, slat_score, state, comment FROM commits")
 	if err != nil {
 		return err
 	}
@@ -89,11 +89,12 @@ func UpdateFromDB(db *sql.DB, ui *DeckardUI) error {
 	var hash string
 	var message string
 	var author string
-	var author_when int64
+	var authorWhen int64
+	var slatScore int
 	var state string
 	var comment *string
 	for rows.Next() {
-		err = rows.Scan(&project, &hash, &message, &author, &author_when, &state, &comment)
+		err = rows.Scan(&project, &hash, &message, &author, &authorWhen, &slatScore, &state, &comment)
 		if err != nil {
 			return err
 		}
@@ -102,7 +103,8 @@ func UpdateFromDB(db *sql.DB, ui *DeckardUI) error {
 			Hash:       hash,
 			Message:    message,
 			Author:     author,
-			AuthorWhen: time.UnixMilli(author_when),
+			AuthorWhen: time.UnixMilli(authorWhen),
+			SlatScore:  slatScore,
 			State:      state,
 			Comment:    comment,
 		})

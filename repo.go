@@ -51,6 +51,7 @@ func updateCommits(ui *DeckardUI, repos map[string]*git.Repository) {
 				Author:     commit.Author.Name,
 				AuthorWhen: commit.Author.When,
 				State:      STATE_NEW,
+				SlatScore:  slatScore(commit),
 			})
 			if commit.Author.When.After(*lastCommitTime) {
 				lastCommitTime = &commit.Author.When

@@ -38,6 +38,7 @@ type Commit struct {
 	AuthorWhen time.Time
 	State      string
 	Comment    *string
+	SlatScore  int // score between 0 and 100
 }
 
 func (c *Commit) Headline() string {
@@ -232,14 +233,27 @@ func updateCommitTable(ui *DeckardUI) {
 	tablePos := 0
 	for _, commit := range ui.state.commits {
 		if selectedPrjName == "" || selectedPrjName == commit.Project {
-			table.SetCellSimple(tablePos, 0, lookupProjectIcon(ui, commit.Project))
-			table.SetCellSimple(tablePos, 1, commit.AuthorWhen.Format("02.01 15:04"))
-			table.SetCellSimple(tablePos, 2, commit.Hash[0:6])
-			table.SetCellSimple(tablePos, 3, commit.Author)
-			table.SetCellSimple(tablePos, 4, commit.Headline())
+			colour := slatColour(commit.SlatScore)
+			setCell(table, tablePos, 0, lookupProjectIcon(ui, commit.Project), colour)
+			setCell(table, tablePos, 1, strconv.FormatInt(int64(commit.SlatScore), 10), colour)
+			setCell(table, tablePos, 2, commit.AuthorWhen.Format("02.01 15:04"), colour)
+			setCell(table, tablePos, 3, commit.Hash[0:6], colour)
+			setCell(table, tablePos, 4, commit.Author, colour)
+			setCell(table, tablePos, 5, commit.Headline(), colour)
 			tablePos++
 		}
 	}
+}
+
+func slatColour(score int) tcell.Color {
+	// TODO Use HSV colour model for a nicer gradient between R and G
+	return tcell.NewRGBColor(int32((255*score)/100), int32((255*(100-score))/100), 0)
+}
+
+func setCell(table *tview.Table, row, column int, text string, colour tcell.Color) {
+	cell := tview.NewTableCell(text)
+	cell.SetTextColor(colour)
+	table.SetCell(row, column, cell)
 }
 
 func lookupProjectIcon(ui *DeckardUI, project string) string {
