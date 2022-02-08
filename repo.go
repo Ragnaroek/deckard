@@ -32,7 +32,7 @@ func updateCommits(ui *DeckardUI, repos map[string]*git.Repository) {
 			panic(err) //TODO show error in UI
 		}
 		if since == nil {
-			fallback := time.Now().Add(14 * -24 * time.Hour)
+			fallback := time.Now().Add(60 * -24 * time.Hour)
 			since = &fallback
 		}
 
@@ -43,7 +43,13 @@ func updateCommits(ui *DeckardUI, repos map[string]*git.Repository) {
 
 		var lastCommitTime = since
 		repoCommits := make([]*Commit, 0)
-		iter.ForEach(func(commit *object.Commit) error {
+		err = iter.ForEach(func(commit *object.Commit) error {
+
+			slatScore, err := slatScore(commit)
+			if err != nil {
+				return err
+			}
+
 			repoCommits = append(repoCommits, &Commit{
 				Project:    prj,
 				Hash:       commit.Hash.String(),
@@ -51,13 +57,16 @@ func updateCommits(ui *DeckardUI, repos map[string]*git.Repository) {
 				Author:     commit.Author.Name,
 				AuthorWhen: commit.Author.When,
 				State:      STATE_NEW,
-				SlatScore:  slatScore(commit),
+				SlatScore:  slatScore,
 			})
 			if commit.Author.When.After(*lastCommitTime) {
 				lastCommitTime = &commit.Author.When
 			}
 			return nil
 		})
+		if err != nil {
+			panic(err)
+		}
 
 		err = StoreCommits(ui.db, repoCommits)
 		if err != nil {
