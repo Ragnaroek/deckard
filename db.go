@@ -9,8 +9,11 @@ import (
 )
 
 const (
-	STATE_NEW = "new"
+	STATE_NEW      = "new"
+	STATE_REVIEWED = "rev"
 )
+
+type CommitState string
 
 func InitDB(config *Config) (*sql.DB, error) {
 	db, err := sql.Open("sqlite3", path.Join(config.CodeFolder, "deckard.db"))
@@ -77,9 +80,17 @@ func StoreCommits(db *sql.DB, commits []*Commit) error {
 	return nil
 }
 
+func UpdateCommitState(db *sql.DB, project, hash string, state CommitState) error {
+	_, err := db.Exec("UPDATE commits SET state = ?1 WHERE project = ?2 AND hash = ?3", state, project, hash)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func UpdateFromDB(db *sql.DB, ui *DeckardUI) error {
 
-	rows, err := db.Query("SELECT project, hash, message, author, author_when, slat_score, state, comment FROM commits")
+	rows, err := db.Query("SELECT project, hash, message, author, author_when, slat_score, state, comment FROM commits WHERE state = ?1", STATE_NEW)
 	if err != nil {
 		return err
 	}

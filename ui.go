@@ -74,6 +74,23 @@ func (ui *DeckardUI) ClearStatus() {
 	updateStatusText(ui.status, ui.state)
 }
 
+func (ui *DeckardUI) MarkAsReviewed(commit *Commit) {
+	err := UpdateCommitState(ui.db, commit.Project, commit.Hash, STATE_REVIEWED)
+	if err != nil {
+		fmt.Printf("ERR: %#v", err) //TODO proper error handling in UI
+	}
+
+	filtered := make([]*Commit, 0, len(ui.state.commits))
+	for _, stateCommit := range ui.state.commits {
+		if commit.Hash != stateCommit.Hash {
+			filtered = append(filtered, stateCommit)
+		}
+	}
+	ui.state.commits = filtered
+
+	updateCommitTable(ui)
+}
+
 func (ui *DeckardUI) AddCommits(commits []*Commit) {
 	//TODO make ui.state.commits a hashtable to prevent this O(n^2) check
 ADD_COMMIT:
@@ -132,7 +149,7 @@ func BuildUI(config *Config, db *sql.DB) (*DeckardUI, error) {
 
 func handleInput(ui *DeckardUI, config *Config, event *tcell.EventKey) *tcell.EventKey {
 	if event.Key() == tcell.KeyRune {
-		if event.Rune() >= '0' && event.Rune() <= '9' {
+		if event.Rune() >= '0' && event.Rune() <= '9' { // select a project
 			id, err := strconv.Atoi(string(event.Rune()))
 			if err != nil {
 				panic(err) //should not happen
@@ -142,6 +159,11 @@ func handleInput(ui *DeckardUI, config *Config, event *tcell.EventKey) *tcell.Ev
 			}
 			ui.SelectProject(id)
 			return event
+		}
+		if event.Rune() == 'r' { // mark as reviewed
+			row, _ := ui.commits.GetSelection()
+			commit := ui.state.commits[row]
+			ui.MarkAsReviewed(commit)
 		}
 	}
 	return event
