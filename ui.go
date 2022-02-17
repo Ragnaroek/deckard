@@ -3,12 +3,14 @@ package deckard
 import (
 	"database/sql"
 	"fmt"
+	"path"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/pkg/browser"
 	"github.com/rivo/tview"
 )
 
@@ -161,12 +163,30 @@ func handleInput(ui *DeckardUI, config *Config, event *tcell.EventKey) *tcell.Ev
 			return event
 		}
 		if event.Rune() == 'r' { // mark as reviewed
-			row, _ := ui.commits.GetSelection()
-			commit := ui.state.commits[row]
-			ui.MarkAsReviewed(commit)
+			ui.MarkAsReviewed(selectedCommit(ui))
+		}
+		if event.Rune() == 'o' { // open commit in browser
+			err := openCommit(ui, selectedCommit(ui))
+			if err != nil {
+				panic(err) //TODO proper ui dialog or status line
+			}
 		}
 	}
 	return event
+}
+
+func openCommit(ui *DeckardUI, commit *Commit) error {
+	config, found := ui.config.Projects[commit.Project]
+	if !found {
+		return fmt.Errorf("no config found for project %s, cannot open in browser", commit.Project)
+	}
+	return browser.OpenURL(path.Join(config.Repo, "commit", commit.Hash))
+}
+
+func selectedCommit(ui *DeckardUI) *Commit {
+	row, _ := ui.commits.GetSelection()
+	commit := ui.state.commits[row]
+	return commit
 }
 
 // ## project view
