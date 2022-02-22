@@ -51,13 +51,14 @@ func updateCommits(ui *DeckardUI, repos map[string]*git.Repository) {
 			}
 
 			repoCommits = append(repoCommits, &Commit{
-				Project:    prj,
-				Hash:       commit.Hash.String(),
-				Message:    commit.Message,
-				Author:     commit.Author.Name,
-				AuthorWhen: commit.Author.When,
-				State:      STATE_NEW,
-				SlatScore:  slatScore,
+				Project:       prj,
+				Hash:          commit.Hash.String(),
+				Message:       commit.Message,
+				AuthorName:    commit.Author.Name,
+				CommitterName: commit.Committer.Name,
+				CommitWhen:    commit.Committer.When,
+				State:         STATE_NEW,
+				SlatScore:     slatScore,
 			})
 			if commit.Author.When.After(*lastCommitTime) {
 				lastCommitTime = &commit.Author.When

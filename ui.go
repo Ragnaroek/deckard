@@ -33,14 +33,15 @@ type uiState struct {
 }
 
 type Commit struct {
-	Project    string
-	Hash       string
-	Message    string
-	Author     string
-	AuthorWhen time.Time
-	State      string
-	Comment    *string
-	SlatScore  int // score between 0 and 100
+	Project       string
+	Hash          string
+	Message       string
+	AuthorName    string
+	CommitterName string
+	CommitWhen    time.Time
+	State         string
+	Comment       *string
+	SlatScore     int // score between 0 and 100
 }
 
 func (c *Commit) Headline() string {
@@ -106,7 +107,7 @@ ADD_COMMIT:
 	}
 
 	sort.Slice(ui.state.commits, func(i, j int) bool {
-		return ui.state.commits[i].AuthorWhen.Before(ui.state.commits[j].AuthorWhen)
+		return ui.state.commits[i].CommitWhen.Before(ui.state.commits[j].CommitWhen)
 	})
 
 	updateCommitTable(ui)
@@ -278,9 +279,9 @@ func updateCommitTable(ui *DeckardUI) {
 			colour := slatColour(commit.SlatScore)
 			setCell(table, tablePos, 0, lookupProjectIcon(ui, commit.Project), colour)
 			setCell(table, tablePos, 1, strconv.FormatInt(int64(commit.SlatScore), 10), colour)
-			setCell(table, tablePos, 2, commit.AuthorWhen.Format("02.01 15:04"), colour)
+			setCell(table, tablePos, 2, commit.CommitWhen.Format("02.01 15:04"), colour)
 			setCell(table, tablePos, 3, commit.Hash[0:6], colour)
-			setCell(table, tablePos, 4, commit.Author, colour)
+			setCell(table, tablePos, 4, commit.AuthorName, colour)
 			setCell(table, tablePos, 5, commit.Headline(), colour)
 			tablePos++
 		}
