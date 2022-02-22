@@ -38,7 +38,7 @@ func updateCommits(ui *DeckardUI, repos map[string]*git.Repository) {
 
 		iter, err := repo.Log(&git.LogOptions{All: true, Since: since})
 		if err != nil {
-			panic(err) //TODO show error in UI
+			panic(fmt.Sprintf("failed to log for project %s: %#v", prj, err)) //TODO show error in UI
 		}
 
 		var lastCommitTime = since
