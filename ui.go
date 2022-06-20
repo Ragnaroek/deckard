@@ -181,7 +181,15 @@ func openCommit(ui *DeckardUI, commit *Commit) error {
 	if !found {
 		return fmt.Errorf("no config found for project %s, cannot open in browser", commit.Project)
 	}
-	return browser.OpenURL(path.Join(config.Repo, "commit", commit.Hash))
+
+	var url string
+	if strings.Contains(config.Repo, "dev.azure.com") {
+		url = path.Join(config.Repo, "commit", commit.Hash) + "?refName=refs%2Fheads%2Fmain"
+	} else {
+		url = path.Join(config.Repo, "commit", commit.Hash)
+	}
+
+	return browser.OpenURL(url)
 }
 
 func selectedCommit(ui *DeckardUI) *Commit {
