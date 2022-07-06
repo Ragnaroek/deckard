@@ -72,7 +72,7 @@ func UpdateFetchState(db *sql.DB, project string, t *time.Time) error {
 func StoreCommits(db *sql.DB, commits []*Commit) error {
 	for _, commit := range commits {
 		_, err := db.Exec("INSERT OR IGNORE INTO commits (project, hash, message, author_name, committer_name, commit_when, slat_score, state, comment) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
-			commit.Project, commit.Hash, commit.Message, commit.AuthorName, commit.CommitterName, commit.CommitWhen.UnixMilli(), commit.SlatScore, commit.State, commit.Comment)
+			commit.Project, commit.Hash, commit.Subject, commit.AuthorName, commit.CommitterName, commit.CommitWhen.UnixMilli(), commit.SlatScore, commit.State, commit.Comment)
 		if err != nil {
 			return err
 		}
@@ -113,7 +113,7 @@ func UpdateFromDB(db *sql.DB, ui *DeckardUI) error {
 		commits = append(commits, &Commit{
 			Project:       project,
 			Hash:          hash,
-			Message:       message,
+			Subject:       message,
 			AuthorName:    authorName,
 			CommitterName: committerName,
 			CommitWhen:    time.UnixMilli(commitWhen),

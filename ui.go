@@ -35,6 +35,7 @@ type uiState struct {
 type Commit struct {
 	Project       string
 	Hash          string
+	Subject       string
 	Message       string
 	AuthorName    string
 	CommitterName string
@@ -42,14 +43,6 @@ type Commit struct {
 	State         string
 	Comment       *string
 	SlatScore     int // score between 0 and 100
-}
-
-func (c *Commit) Headline() string {
-	lines := strings.Split(c.Message, "\n")
-	if len(lines) > 0 {
-		return lines[0]
-	}
-	return ""
 }
 
 func newDeckardUi(app *tview.Application, state *uiState, config *Config, db *sql.DB) *DeckardUI {
@@ -290,7 +283,7 @@ func updateCommitTable(ui *DeckardUI) {
 			setCell(table, tablePos, 2, commit.CommitWhen.Format("02.01 15:04"), colour)
 			setCell(table, tablePos, 3, commit.Hash[0:6], colour)
 			setCell(table, tablePos, 4, commit.AuthorName, colour)
-			setCell(table, tablePos, 5, commit.Headline(), colour)
+			setCell(table, tablePos, 5, commit.Subject, colour)
 			tablePos++
 		}
 	}
