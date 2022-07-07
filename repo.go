@@ -45,12 +45,19 @@ func updateCommits(ui *DeckardUI) {
 		repoCommits := make([]*Commit, 0)
 
 		for _, commit := range log {
-			/*slatScore, err := slatScore(commit)
+			diff, err := diffRepo(folder, commit.Hash)
 			if err != nil {
-				return err
-			}*/
+				fmt.Printf("### diff failed %s, %s", folder, commit.Hash)
+				panic(err) // TODO show error in UI
+			}
+
+			slatScore, err := slatScore(diff)
+			if err != nil {
+				panic(err) // TODO show error in UI
+			}
 			commit.Project = prj
 			commit.State = STATE_NEW
+			commit.SlatScore = slatScore
 
 			// TODO go back to AuthorWhen???
 			if commit.CommitWhen.After(*lastCommitTime) {
@@ -151,6 +158,66 @@ func logRepo(targetFolder string, since *time.Time) ([]*Commit, error) {
 		})
 	}
 	return commits, nil
+}
+
+type NumStat struct {
+	Added   uint64
+	Deleted uint64
+	File    string
+}
+
+type Diff struct {
+	Stats []NumStat
+}
+
+func diffRepo(targetFolder, hash string) (*Diff, error) {
+	cmd := exec.Command("git", "diff", "--numstat", fmt.Sprintf("%s..%s^", hash, hash), "--")
+	cmd.Dir = targetFolder
+	diffOut, err := cmd.Output()
+	if err != nil {
+		errExit := err.(*exec.ExitError)
+		fmt.Printf("### fun diff failed %s -- err %#v", fmt.Sprintf("%s^", hash), string(errExit.Stderr))
+		return nil, err
+	}
+
+	parsed, err := parseNumStat(string(diffOut))
+	if err != nil {
+		return nil, err
+	}
+	return parsed, nil
+}
+
+func parseNumStat(raw string) (*Diff, error) {
+
+	if len(raw) == 0 {
+		return &Diff{}, nil
+	}
+
+	lines := strings.Split(raw, "\n")
+
+	stats := make([]NumStat, 0)
+	for _, line := range lines {
+		if len(strings.TrimSpace(line)) == 0 {
+			continue
+		}
+		fields := strings.Fields(line)
+		if len(fields) != 3 {
+			return nil, fmt.Errorf("unexpected diff line: %s", line)
+		}
+
+		added, err := strconv.ParseUint(fields[0], 10, 32)
+		if err != nil {
+			return nil, err
+		}
+		deleted, err := strconv.ParseUint(fields[1], 10, 32)
+		if err != nil {
+			return nil, err
+		}
+
+		stats = append(stats, NumStat{Added: added, Deleted: deleted, File: fields[2]})
+	}
+
+	return &Diff{Stats: stats}, nil
 }
 
 func updateStatus(ui *DeckardUI, text string) {
