@@ -175,8 +175,6 @@ func diffRepo(targetFolder, hash string) (*Diff, error) {
 	cmd.Dir = targetFolder
 	diffOut, err := cmd.Output()
 	if err != nil {
-		errExit := err.(*exec.ExitError)
-		fmt.Printf("### fun diff failed %s -- err %#v", fmt.Sprintf("%s^", hash), string(errExit.Stderr))
 		return nil, err
 	}
 
@@ -201,7 +199,7 @@ func parseNumStat(raw string) (*Diff, error) {
 			continue
 		}
 		fields := strings.Fields(line)
-		if len(fields) != 3 {
+		if len(fields) < 3 {
 			return nil, fmt.Errorf("unexpected diff line: %s", line)
 		}
 
@@ -214,7 +212,15 @@ func parseNumStat(raw string) (*Diff, error) {
 			return nil, err
 		}
 
-		stats = append(stats, NumStat{Added: added, Deleted: deleted, File: fields[2]})
+		file := ""
+		for i := 2; i < len(fields); i++ {
+			if i != 2 {
+				file += " "
+			}
+			file += fields[i]
+		}
+
+		stats = append(stats, NumStat{Added: added, Deleted: deleted, File: file})
 	}
 
 	return &Diff{Stats: stats}, nil

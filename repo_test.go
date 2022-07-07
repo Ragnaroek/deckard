@@ -31,6 +31,13 @@ func TestDiffRepo(t *testing.T) {
 				[]NumStat{{14, 0, "repo.go"}, {1, 16, "slat.go"}},
 			},
 		},
+		{
+			desc:    "move commit",
+			diffStr: "0      0       services/{foo => echo}/Makefile\n1       16      slat.go",
+			expectedDiff: &Diff{
+				[]NumStat{{0, 0, "services/{foo => echo}/Makefile"}, {1, 16, "slat.go"}},
+			},
+		},
 	}
 	for _, c := range tc {
 		t.Run(c.desc, func(t *testing.T) {
