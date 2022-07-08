@@ -47,8 +47,7 @@ func updateCommits(ui *DeckardUI) {
 		for _, commit := range log {
 			diff, err := diffRepo(folder, commit.Hash)
 			if err != nil {
-				fmt.Printf("### diff failed %s, %s", folder, commit.Hash)
-				panic(err) // TODO show error in UI
+				panic(fmt.Errorf("diff failed %s, %s, %w", folder, commit.Hash, err)) // TODO show error in UI
 			}
 
 			slatScore, err := slatScore(diff)
@@ -127,7 +126,7 @@ func pullRepo(targetFolder string) error {
 
 func logRepo(targetFolder string, since *time.Time) ([]*Commit, error) {
 	sinceArg := fmt.Sprintf("--since=%s", since.Format(time.RFC3339))
-	cmd := exec.Command("git", "log", "--all", sinceArg, "--format=%H%x00%an%x00%cn%x00%ct%x00%s%x00%b%x00")
+	cmd := exec.Command("git", "log", sinceArg, "--format=%H%x00%an%x00%cn%x00%ct%x00%s%x00%b%x00")
 	cmd.Dir = targetFolder
 	out, err := cmd.Output()
 	if err != nil {
@@ -175,7 +174,11 @@ func diffRepo(targetFolder, hash string) (*Diff, error) {
 	cmd.Dir = targetFolder
 	diffOut, err := cmd.Output()
 	if err != nil {
-		return nil, err
+		errExit := err.(*exec.ExitError)
+		if errExit.ExitCode() == 128 { //probably the first commit, return an empty commit
+			return &Diff{}, nil
+		}
+		return nil, fmt.Errorf("diff command failed: %w, out=%s", err, string(errExit.Stderr))
 	}
 
 	parsed, err := parseNumStat(string(diffOut))
