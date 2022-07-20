@@ -3,6 +3,7 @@ package deckard
 import (
 	"database/sql"
 	"fmt"
+	"net/url"
 	"path"
 	"sort"
 	"strconv"
@@ -169,17 +170,31 @@ func handleInput(ui *DeckardUI, config *Config, event *tcell.EventKey) *tcell.Ev
 	return event
 }
 
+func sanitizeRepoURL(raw string) (string, error) {
+	parsed, err := url.Parse(raw)
+	if err != nil {
+		return "", err
+	}
+	parsed.User = nil
+	return parsed.String(), nil
+}
+
 func openCommit(ui *DeckardUI, commit *Commit) error {
 	config, found := ui.config.Projects[commit.Project]
 	if !found {
 		return fmt.Errorf("no config found for project %s, cannot open in browser", commit.Project)
 	}
 
+	repo, err := sanitizeRepoURL(config.Repo)
+	if err != nil {
+		return err
+	}
+
 	var url string
-	if strings.Contains(config.Repo, "dev.azure.com") {
-		url = path.Join(config.Repo, "commit", commit.Hash) + "?refName=refs%2Fheads%2Fmain"
+	if strings.Contains(repo, "dev.azure.com") {
+		url = path.Join(repo, "commit", commit.Hash) + "?refName=refs%2Fheads%2Fmain"
 	} else {
-		url = path.Join(config.Repo, "commit", commit.Hash)
+		url = path.Join(repo, "commit", commit.Hash)
 	}
 
 	return browser.OpenURL(url)
