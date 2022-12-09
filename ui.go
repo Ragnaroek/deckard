@@ -107,6 +107,10 @@ ADD_COMMIT:
 	updateCommitTable(ui)
 }
 
+func (ui *DeckardUI) Quit() {
+	ui.app.Stop()
+}
+
 func BuildUI(config *Config, db *sql.DB) (*DeckardUI, error) {
 
 	initialState := &uiState{}
@@ -159,6 +163,9 @@ func handleInput(ui *DeckardUI, config *Config, event *tcell.EventKey) *tcell.Ev
 		}
 		if event.Rune() == 'r' { // mark as reviewed
 			ui.MarkAsReviewed(selectedCommit(ui))
+		}
+		if event.Rune() == 'q' { // mark as reviewed
+			ui.Quit()
 		}
 		if event.Rune() == 'o' { // open commit in browser
 			err := openCommit(ui, selectedCommit(ui))
