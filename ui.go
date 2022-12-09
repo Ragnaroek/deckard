@@ -107,6 +107,10 @@ ADD_COMMIT:
 	updateCommitTable(ui)
 }
 
+func (ui *DeckardUI) Quit() {
+	ui.app.Stop()
+}
+
 func BuildUI(config *Config, db *sql.DB) (*DeckardUI, error) {
 
 	initialState := &uiState{}
@@ -160,6 +164,9 @@ func handleInput(ui *DeckardUI, config *Config, event *tcell.EventKey) *tcell.Ev
 		if event.Rune() == 'r' { // mark as reviewed
 			ui.MarkAsReviewed(selectedCommit(ui))
 		}
+		if event.Rune() == 'q' { // mark as reviewed
+			ui.Quit()
+		}
 		if event.Rune() == 'o' { // open commit in browser
 			err := openCommit(ui, selectedCommit(ui))
 			if err != nil {
@@ -171,12 +178,37 @@ func handleInput(ui *DeckardUI, config *Config, event *tcell.EventKey) *tcell.Ev
 }
 
 func sanitizeRepoURL(raw string) (string, error) {
-	parsed, err := url.Parse(raw)
-	if err != nil {
-		return "", err
+	if strings.HasPrefix(raw, "git") {
+		split := strings.Split(raw, ":")
+		prefix, path := split[0], split[1]
+
+		if prefix == "git@ssh.dev.azure.com" {
+			return sanitizeAzurePath(path)
+		}
+
+		return "", fmt.Errorf("unable to handle '%s'", prefix)
 	}
-	parsed.User = nil
-	return parsed.String(), nil
+	if strings.HasPrefix(raw, "http") {
+		parsed, err := url.Parse(raw)
+		if err != nil {
+			return "", err
+		}
+		parsed.User = nil
+		return parsed.String(), nil
+	}
+
+	return "", fmt.Errorf("unable to parse '%s'", raw)
+}
+
+func sanitizeAzurePath(rawPath string) (string, error) {
+	pathParts := strings.Split(rawPath, "/")
+	version, org, project, repo := pathParts[0], pathParts[1], pathParts[2], pathParts[3]
+
+	if version != "v3" {
+		return "", fmt.Errorf("can only handle v3 urls but is '%s'", version)
+	}
+
+	return fmt.Sprintf("https://dev.azure.com/%s/%s/_git/%s", org, project, repo), nil
 }
 
 func openCommit(ui *DeckardUI, commit *Commit) error {
@@ -197,6 +229,8 @@ func openCommit(ui *DeckardUI, commit *Commit) error {
 		url = path.Join(repo, "commit", commit.Hash)
 	}
 
+	browser.Stderr = nil
+	browser.Stdout = nil
 	return browser.OpenURL(url)
 }
 

@@ -20,6 +20,11 @@ func TestRepoURL(t *testing.T) {
 			url:         "https://user:secret@dev.azure.com/my/repo",
 			expectedUrl: "https://dev.azure.com/my/repo",
 		},
+		{
+			desc:        "Azure Git url",
+			url:         "git@ssh.dev.azure.com:v3/org/project/repo",
+			expectedUrl: "https://dev.azure.com/org/project/_git/repo",
+		},
 	}
 
 	for _, c := range tc {
