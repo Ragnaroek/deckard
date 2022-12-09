@@ -197,6 +197,8 @@ func openCommit(ui *DeckardUI, commit *Commit) error {
 		url = path.Join(repo, "commit", commit.Hash)
 	}
 
+	browser.Stderr = nil
+	browser.Stdout = nil
 	return browser.OpenURL(url)
 }
 
