@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-/// RepoUpdate refreshes all repo based resources after the UI has been started.
+// RepoUpdate refreshes all repo based resources after the UI has been started.
 func UpdateFromRepo(ui *DeckardUI) {
 	go backgroundUpdate(ui)
 }
@@ -201,6 +201,7 @@ func parseNumStat(raw string) (*Diff, error) {
 		if len(strings.TrimSpace(line)) == 0 {
 			continue
 		}
+
 		fields := strings.Fields(line)
 		if len(fields) < 3 {
 			return nil, fmt.Errorf("unexpected diff line: %s", line)
@@ -208,11 +209,15 @@ func parseNumStat(raw string) (*Diff, error) {
 
 		added, err := strconv.ParseUint(fields[0], 10, 32)
 		if err != nil {
-			return nil, err
+			//TODO At least log an error here
+			stats = append(stats, NumStat{Added: 0, Deleted: 0, File: ""})
+			continue
 		}
 		deleted, err := strconv.ParseUint(fields[1], 10, 32)
 		if err != nil {
-			return nil, err
+			//TODO At least log an error here
+			stats = append(stats, NumStat{Added: 0, Deleted: 0, File: ""})
+			continue
 		}
 
 		file := ""
