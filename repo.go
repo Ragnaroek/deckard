@@ -80,7 +80,7 @@ func updateCommits(ui *DeckardUI) {
 	}
 
 	ui.app.QueueUpdateDraw(func() {
-		ui.AddCommits(commits)
+		UpdateFromDB(ui.db, ui)
 	})
 
 	clearStatus(ui)
