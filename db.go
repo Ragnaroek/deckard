@@ -30,7 +30,7 @@ func InitDB(config *Config) (*sql.DB, error) {
 		return nil, err
 	}
 
-	_, err = db.Exec("CREATE TABLE IF NOT EXISTS commits (project TEXT NOT NULL, hash TEXT NOT NULL, message TEXT NOT NULL, author_name TEXT NOT NULL, committer_name TEXT NOT NULL, commit_when INTEGER, slat_score INTEGER, state TEXT NOT NULL, comment TEXT)")
+	_, err = db.Exec("CREATE TABLE IF NOT EXISTS commits (project TEXT NOT NULL, hash TEXT NOT NULL, message TEXT NOT NULL, author_name TEXT NOT NULL, committer_name TEXT NOT NULL, commit_when INTEGER, slat_score INTEGER, state TEXT NOT NULL, comment TEXT, UNIQUE(project, hash))")
 	if err != nil {
 		return nil, err
 	}
