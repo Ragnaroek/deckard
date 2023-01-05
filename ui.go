@@ -128,11 +128,11 @@ func BuildUI(config *Config, db *sql.DB) (*DeckardUI, error) {
 			AddItem(status, 0, 50, false),
 			3, 100, false).
 		AddItem(tview.NewFlex().SetDirection(tview.FlexColumn).
-			AddItem(commits, 0, 70, true).
-			AddItem(tview.NewFlex().SetDirection(tview.FlexRow).
-				AddItem(tview.NewBox().SetBorder(true).SetTitle("Commit Details"), 0, 66, false).
-				AddItem(tview.NewBox().SetBorder(true).SetTitle("Project Metric"), 0, 34, false),
-				0, 30, false),
+			AddItem(commits, 0, 70, true),
+			//	AddItem(tview.NewFlex().SetDirection(tview.FlexRow).
+			//		AddItem(tview.NewBox().SetBorder(true).SetTitle("Commit Details"), 0, 66, false).
+			//		AddItem(tview.NewBox().SetBorder(true).SetTitle("Project Metric"), 0, 34, false),
+			//		0, 30, false),
 			0, 100, false)
 
 	app := tview.NewApplication().SetRoot(flex, true).SetFocus(commits)
