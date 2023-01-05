@@ -15,28 +15,59 @@ const (
 
 type CommitState string
 
+var migrations = [][]string{
+	{
+		"CREATE TABLE IF NOT EXISTS fetch_states (project TEXT NOT NULL, since INTEGER)",
+		"CREATE UNIQUE INDEX IF NOT EXISTS index_fetch_states ON fetch_states (project)",
+		"CREATE TABLE IF NOT EXISTS commits (project TEXT NOT NULL, hash TEXT NOT NULL, message TEXT NOT NULL, author_name TEXT NOT NULL, committer_name TEXT NOT NULL, commit_when INTEGER, slat_score INTEGER, state TEXT NOT NULL, comment TEXT)",
+		"CREATE UNIQUE INDEX IF NOT EXISTS index_commits ON commits (project, hash)",
+	},
+}
+
 func InitDB(config *Config) (*sql.DB, error) {
 	db, err := sql.Open("sqlite3", path.Join(config.CodeFolder, "deckard.db"))
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = db.Exec("CREATE TABLE IF NOT EXISTS fetch_states (project TEXT NOT NULL, since INTEGER)")
-	if err != nil {
-		return nil, err
-	}
-	_, err = db.Exec("CREATE UNIQUE INDEX IF NOT EXISTS index_fetch_states ON fetch_states (project)")
+	row := db.QueryRow("SELECT Count(*) FROM sqlite_master WHERE type='table' AND name='migrations'")
+	var tabCount int
+	err = row.Scan(&tabCount)
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = db.Exec("CREATE TABLE IF NOT EXISTS commits (project TEXT NOT NULL, hash TEXT NOT NULL, message TEXT NOT NULL, author_name TEXT NOT NULL, committer_name TEXT NOT NULL, commit_when INTEGER, slat_score INTEGER, state TEXT NOT NULL, comment TEXT)")
-	if err != nil {
-		return nil, err
+	var version int
+	if tabCount == 0 {
+		_, errCreate := db.Exec("CREATE TABLE IF NOT EXISTS migrations (version INTEGER NOT NULL)")
+		if errCreate != nil {
+			return nil, errCreate
+		}
+		_, errCreate = db.Exec("INSERT INTO migrations (version) VALUES (0)")
+		if errCreate != nil {
+			return nil, errCreate
+		}
+		version = 0
+	} else {
+		row := db.QueryRow("SELECT version FROM migrations")
+		errVersion := row.Scan(&version)
+		if errVersion != nil {
+			return nil, errVersion
+		}
 	}
-	_, err = db.Exec("CREATE UNIQUE INDEX IF NOT EXISTS index_commits ON commits (project, hash)")
-	if err != nil {
-		return nil, err
+
+	for i := version; i < len(migrations); i++ {
+		migrationList := migrations[i]
+		for _, migration := range migrationList {
+			_, err := db.Exec(migration)
+			if err != nil {
+				return nil, err
+			}
+		}
+		_, err := db.Exec("UPDATE migrations SET version = ?", i+1)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return db, nil

@@ -25,6 +25,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
 	deckard.UpdateFromRepo(ui)
 
 	err = ui.Run()

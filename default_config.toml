@@ -1,4 +1,4 @@
-code_folder = "/Users/mb/_deckard_code/"
+code_folder = "<path to clone the repos to>"
 
 [project.flutter]
 icon = "🐦"
